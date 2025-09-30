@@ -16,6 +16,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts"
+import NoData from "./no-data"
 
 interface MetricsData {
   _id: string
@@ -90,11 +91,12 @@ export default function MetricsChart({ data, type, title, dataKey }: MetricsChar
         ]
       : []
 
+
   const renderChart = () => {
     switch (type) {
       case "bar":
         return (
-          <ChartContainer config={chartConfig} className="h-[300px]">
+          <ChartContainer config={chartConfig} >
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={aggregatedData}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -109,8 +111,8 @@ export default function MetricsChart({ data, type, title, dataKey }: MetricsChar
 
       case "line":
         return (
-          <ChartContainer config={chartConfig} className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
+          <ChartContainer config={chartConfig}  className="max-h-[100%] min-w-[100%]">
+            <ResponsiveContainer width="100%" height={"100%"}>
               <LineChart data={aggregatedData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
@@ -132,7 +134,7 @@ export default function MetricsChart({ data, type, title, dataKey }: MetricsChar
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  label={({ name, percent }) => `${name}: ${(percent? percent * 100: 0).toFixed(0)}%`}
                   outerRadius={120}
                   fill="#8884d8"
                   dataKey="value"
@@ -159,7 +161,17 @@ export default function MetricsChart({ data, type, title, dataKey }: MetricsChar
         <CardTitle>{title}</CardTitle>
         <CardDescription>{type === "pie" ? "Distribution for latest month" : "Monthly trends"}</CardDescription>
       </CardHeader>
-      <CardContent>{renderChart()}</CardContent>
+      {
+        data.length > 0 ? (
+          <CardContent className="h-[400px]">
+            {renderChart()}
+          </CardContent>
+        ) : (
+          <div className="h-[400px] flex items-center justify-center">
+            <NoData />
+          </div>
+        )
+      }
     </Card>
   )
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
@@ -11,6 +11,9 @@ import MetricsChart from "@/components/metrics-chart"
 import UploadForm from "@/components/upload-form"
 import { getAuthHeaders } from "@/lib/auth"
 import axios from "@/lib/axios-config"
+import TotalTeamChart from "./totalteam-chart"
+import { YearPicker } from "./year-picker"
+import { set } from "date-fns"
 
 interface MetricsData {
   _id: string
@@ -27,14 +30,19 @@ interface UserInfo {
   team?: string
 }
 
+type Years=Array<string>
+
 export default function Dashboard() {
   const [metricsData, setMetricsData] = useState<MetricsData[]>([])
   const [filteredData, setFilteredData] = useState<MetricsData[]>([])
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null)
   const [selectedTeam, setSelectedTeam] = useState<string>("all")
   const [teams, setTeams] = useState<string[]>([])
+  const [yearsParam, setYearsParam] = useState<string>(new Date().getFullYear().toString())
   const [isLoading, setIsLoading] = useState(true)
   const { toast } = useToast()
+  const [years, setyears] = useState<Years>([])
+  console.log("Selected Year:", yearsParam)
 
   useEffect(() => {
     // Get user info from JWT
@@ -51,10 +59,20 @@ export default function Dashboard() {
       }
     }
   }, [])
-
+   const getYears = async()=>{
+    try{
+    const response = await axios.get("/api/metrics/getYears")
+    setyears(response.data.years)
+    }catch(error){
+        console.error("Failed to fetch years", error)
+    }
+ }
+  useEffect(()=>{
+    getYears()
+},[])
   useEffect(() => {
     fetchMetrics()
-  }, [])
+  }, [yearsParam])
 
   useEffect(() => {
     // Filter data based on selected team and user role
@@ -67,22 +85,24 @@ export default function Dashboard() {
       setFilteredData(metricsData.filter((item) => item.team === selectedTeam))
     }
   }, [metricsData, selectedTeam, userInfo])
-
+   TODO:"pass year as parameter while fetching metrics"
   const fetchMetrics = async () => {
     try {
       setIsLoading(true)
       const response = await axios.get("/api/metrics", {
         headers: getAuthHeaders(),
+        params: { year: yearsParam },
       })
 
       const metrics = response.data.metrics || response.data
+      console.log("Fetched metrics:", metrics)
       setMetricsData(metrics)
-      console.log("Fetched metrics:", metrics) // Debug log
 
       // Extract unique teams for dropdown
       const uniqueTeams = [...new Set(metrics.map((item: MetricsData) => item.team))] as string[]
       setTeams(uniqueTeams)
     } catch (error: any) {
+      console.error("Failed to fetch metrics", error)
       // Use dummy data if API is not available
       const dummyData: MetricsData[] = [
         {
@@ -238,7 +258,11 @@ export default function Dashboard() {
                   </SelectContent>
                 </Select>
               )}
-              
+              <div>
+                {
+                  yearsParam && <YearPicker years={years} yearParam={yearsParam}  setYearParams={setYearsParam} />
+                }
+              </div>
               {userInfo?.role === "whole_manager" && teams.length === 0 && (
                 <div className="text-sm text-gray-500 bg-gray-100 px-3 py-2 rounded-md">
                   No teams assigned yet. Create team managers to see teams here.
@@ -287,8 +311,18 @@ export default function Dashboard() {
           </div>
 
           {/* Charts */}
+          {
+            userInfo?.role === "whole_manager" &&(
+                        <div className="grid grid-cols-1 gap-6 lg:grid-cols-1">
+                            <TotalTeamChart data={metricsData} type="bar" title="Team-wise Monthly Metrics"/>
+                </div>
+            )
+          }
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <MetricsChart data={filteredData} type="bar" title="Bugs Filed per Month" dataKey="bugsFiled" />
+            <MetricsChart data={filteredData} type="pie" title="Latest Month Distribution" />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
             <MetricsChart
               data={filteredData}
               type="line"
@@ -297,9 +331,6 @@ export default function Dashboard() {
             />
           </div>
 
-          <div className="grid grid-cols-1 gap-6">
-            <MetricsChart data={filteredData} type="pie" title="Latest Month Distribution" />
-          </div>
 
           {/* Upload Form for Team Managers */}
           {userInfo?.role === "team_manager" && (

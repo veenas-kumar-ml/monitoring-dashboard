@@ -1,0 +1,37 @@
+version: '3.9'
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "3000:3000" # Map port 3000 on the host to port 3000 in the container
+    env_file:
+      - .env
+    depends_on:
+      - backend
+    networks:
+      - regression-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    ports:
+      - "4000:4000" # Map port 4000 on the host to port 4000 in the container
+    env_file:
+      - .env
+    depends_on:
+      - mongodb
+    networks:
+      - regression-network
+
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27017:27017" # Map port 27017 on the host to port 27017 in the container
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - regression-network

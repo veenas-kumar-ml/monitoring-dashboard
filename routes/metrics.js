@@ -6,6 +6,17 @@ const { authMiddleware, roleMiddleware } = require("../middleware/auth")
 
 const router = express.Router()
 
+// get whole year for display in the dropdown
+router.get("/getYears", async(req,res)=>{
+  try {
+    const years = await Metric.distinct("year");
+    res.json({ years });
+  } catch (error) {
+    console.error("Years fetch error:", error);
+    res.status(500).json({ message: "Server error during years fetch" });
+  }
+})
+
 // Upload metrics (team_manager only)
 router.post(
   "/",
@@ -30,7 +41,7 @@ router.post(
         })
       }
 
-      const { month, testcaseAutomated, bugsFiled, scriptIssueFixed, scriptIntegrated } = req.body
+      const { month, testcaseAutomated, bugsFiled, scriptIssueFixed, scriptIntegrated,year } = req.body
 
       // Check if metrics for this team and month already exist
       const existingMetric = await Metric.findOne({
@@ -48,6 +59,7 @@ router.post(
       const metric = new Metric({
         team: req.user.team,
         month,
+        year,
         testcaseAutomated,
         bugsFiled,
         scriptIssueFixed,
@@ -84,6 +96,10 @@ router.get(
       .optional()
       .matches(/^\d{4}-\d{2}$/)
       .withMessage("Month must be in YYYY-MM format"),
+    query("year")
+      .optional()
+      .matches(/^\d{4}$/)
+      .withMessage("Year must be a valid year"),
     query("limit").optional().isInt({ min: 1, max: 100 }).withMessage("Limit must be between 1 and 100"),
     query("page").optional().isInt({ min: 1 }).withMessage("Page must be a positive integer"),
   ],
@@ -97,7 +113,7 @@ router.get(
         })
       }
 
-      const { team, month, limit = 50, page = 1 } = req.query
+      const { team, month, limit = 50, page = 1 , year } = req.query
       const skip = (page - 1) * limit
 
       // Build query based on user role
@@ -134,6 +150,9 @@ router.get(
       // Add month filter if provided
       if (month) {
         query.month = month
+      }
+      if(year){
+        query.year = year
       }
 
       // Execute query with pagination

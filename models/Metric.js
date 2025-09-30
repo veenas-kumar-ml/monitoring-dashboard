@@ -13,6 +13,11 @@ const metricSchema = new mongoose.Schema(
       required: [true, "Month is required"],
       match: [/^\d{4}-\d{2}$/, "Month must be in YYYY-MM format"],
     },
+    year:{
+      type: String,
+      required: [true, "Year is required"],
+      match: [/^\d{4}$/, "Year must be in YYYY format"],
+    },
     testcaseAutomated: {
       type: Number,
       required: [true, "Testcase Automated count is required"],

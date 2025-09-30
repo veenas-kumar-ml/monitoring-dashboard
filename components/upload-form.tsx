@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import { getAuthHeaders } from "@/lib/auth"
 import axios from "@/lib/axios-config"
+import { Baseline } from "lucide-react"
 
 interface UploadFormProps {
   onUploadSuccess: () => void
@@ -21,6 +22,7 @@ export default function UploadForm({ onUploadSuccess }: UploadFormProps) {
     testcaseAutomated: "",
     bugsFiled: "",
     scriptIssueFixed: "",
+    baseline:"",
     scriptIntegrated: "",
   })
   const [isLoading, setIsLoading] = useState(false)
@@ -41,9 +43,12 @@ export default function UploadForm({ onUploadSuccess }: UploadFormProps) {
       // Get user's team from JWT
       const token = localStorage.getItem("jwt")
       let userTeam = ""
+      let year = "";
       if (token) {
         try {
           const payload = JSON.parse(atob(token.split(".")[1]))
+          year = formData.month.split("-")[0].trim();  
+          console.log("Extracted year:", year);
           userTeam = payload.team || ""
         } catch (error) {
           console.error("Error parsing JWT:", error)
@@ -53,10 +58,12 @@ export default function UploadForm({ onUploadSuccess }: UploadFormProps) {
       const payload = {
         month: formData.month,
         team: userTeam,
+        year: year,
         testcaseAutomated: Number.parseInt(formData.testcaseAutomated),
         bugsFiled: Number.parseInt(formData.bugsFiled),
         scriptIssueFixed: Number.parseInt(formData.scriptIssueFixed),
         scriptIntegrated: Number.parseInt(formData.scriptIntegrated),
+        Baseline: Number.parseInt(formData.baseline),
       }
 
       await axios.post("/api/metrics", payload, {
@@ -75,6 +82,7 @@ export default function UploadForm({ onUploadSuccess }: UploadFormProps) {
         bugsFiled: "",
         scriptIssueFixed: "",
         scriptIntegrated: "",
+        baseline:"",  
       })
 
       onUploadSuccess()
@@ -145,7 +153,7 @@ export default function UploadForm({ onUploadSuccess }: UploadFormProps) {
               />
             </div>
 
-            <div className="space-y-2 md:col-span-2">
+            <div className="space-y-2">
               <Label htmlFor="scriptIntegrated">Scripts Integrated</Label>
               <Input
                 id="scriptIntegrated"
@@ -153,6 +161,17 @@ export default function UploadForm({ onUploadSuccess }: UploadFormProps) {
                 min="0"
                 value={formData.scriptIntegrated}
                 onChange={(e) => handleInputChange("scriptIntegrated", e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="baseline">Baseline</Label>
+              <Input
+                id="baseline"
+                type="number"
+                min="0"
+                value={formData.baseline}
+                onChange={(e) => handleInputChange("baseline", e.target.value)}
                 required
               />
             </div>
