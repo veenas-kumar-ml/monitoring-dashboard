@@ -35,3 +35,7 @@ services:
       - mongo-data:/data/db
     networks:
       - regression-network
+  volumes:
+    mongo-data:
+  networks:
+    regression-network:
