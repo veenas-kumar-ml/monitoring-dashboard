@@ -1,6 +1,6 @@
 import axios from "axios"
 
-axios.defaults.baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+axios.defaults.baseURL = process.env.NEXT_PUBLIC_API_URL || "http://10.81.1.104:5000"
 
 // Set up axios interceptors for JWT handling
 axios.interceptors.request.use(
